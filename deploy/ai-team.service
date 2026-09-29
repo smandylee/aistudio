@@ -1,0 +1,37 @@
+# 팀 서버를 VM에서 24/7 돌리는 systemd 서비스. 시로(shiro-orchestrator)와 같은 VM에 둔다.
+#
+# 설치 (저장소 폴더에서):
+#   mkdir -p data
+#   sudo cp deploy/ai-team.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ai-team
+# 로그:   sudo journalctl -u ai-team -f
+# 재시작: sudo systemctl restart ai-team   (git pull 뒤)
+#
+# 경로·사용자는 /home/ubuntu/aistudio, ubuntu 기준. 다르면 User와 /home/ubuntu/aistudio가 나오는 곳을 모두 고친다.
+# 설정은 저장소의 .env에서 읽는다 (dotenv가 작업 디렉터리의 .env를 읽음).
+
+[Unit]
+Description=AI team server (Shiro's team members)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/aistudio
+# npm start와 같지만 npm을 거치지 않는다 (npm은 읽기 전용인 ~/.npm에 로그를 쓰려 한다).
+ExecStart=/home/ubuntu/aistudio/node_modules/.bin/tsx src/server.ts
+Restart=on-failure
+RestartSec=5
+
+# 팀원은 아무것도 바꾸지 못한다 — 서버 프로세스도 쓸 수 있는 곳은 data/ 뿐.
+# data/가 없으면 서비스가 뜨지 않는다 (위의 mkdir -p data).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/aistudio/data
+
+[Install]
+WantedBy=multi-user.target

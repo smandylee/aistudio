@@ -58,7 +58,8 @@
 3. **팀 서버를 VM에 올리기** (시로와 같은 Lightsail VM, 홍콩)
    - VM에서 `git clone https://github.com/smandylee/aistudio.git` → `npm install` → `.env` 작성 (`.env.example` 참고, 토큰은 `openssl rand -hex 32`).
    - GCP 인증은 시로와 같은 서비스 계정 키를 쓰면 된다 (`GOOGLE_APPLICATION_CREDENTIALS`).
-   - systemd 서비스로 등록 (시로의 `shiro-orchestrator.service`를 본떠서). **아직 서비스 파일 없음 — 만들어야 함.**
+   - systemd 서비스로 등록: `deploy/ai-team.service` 맨 위 주석의 설치 명령대로 (`mkdir -p data` 먼저).
+     경로·사용자는 `/home/ubuntu/aistudio`, `ubuntu` 가정 — VM이 다르면 파일에서 고친다. VM에서 아직 안 켜봤다.
 4. **시로 쪽 켜기**
    - shiro `team-channel` 브랜치를 main에 합칠지 결정 → 배포 (`package.json` 안 바뀜, 시로의 "배포해" 사용 가능).
    - VM `/etc/shiro.env`에 `TEAM_CHANNEL_ID`, `TEAM_SERVER_URL=http://127.0.0.1:18791`, `TEAM_SERVER_TOKEN`.
@@ -81,6 +82,11 @@
 ## 기록
 
 최신이 위.
+
+### 2026-09-29 — systemd 서비스 파일
+
+`deploy/ai-team.service` 추가. `.env`는 저장소 폴더에서 읽고, 쓸 수 있는 곳은 `data/`뿐(ProtectSystem=strict).
+npm 대신 `node_modules/.bin/tsx`를 직접 실행 (npm이 읽기 전용 홈에 로그를 쓰려 해서). 이 Windows PC엔 gcloud·VM 키가 없어 실행 확인은 못 함.
 
 ### 2026-09-29 — 팀 서버 만들고 시로에서 분리
 
