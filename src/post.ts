@@ -2,15 +2,14 @@ import { AttachmentBuilder, WebhookClient } from "discord.js";
 import type { TeamImage, TeamMember } from "./members.js";
 
 // Teammates speak in the team channel's threads through one webhook, each
-// under their own name and picture. The webhook URL is all it takes: the team
-// server has no bot account of its own.
+// under their own name and picture, so one webhook stands in for four bot accounts.
 
 const url = process.env.TEAM_WEBHOOK_URL;
 const webhook = url ? new WebhookClient({ url }) : null;
 if (!webhook) console.warn("[post] TEAM_WEBHOOK_URL is not set: results are returned but not posted");
 
 // Discord caps a message at 2000 characters; cut on line breaks where possible.
-function chunk(text: string, size = 1900): string[] {
+export function chunk(text: string, size = 1900): string[] {
   const parts: string[] = [];
   let rest = text;
   while (rest.length > size) {

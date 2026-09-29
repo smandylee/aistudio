@@ -9,72 +9,62 @@
 
 ## 상태 (2026-09-29 기준)
 
-**코드는 다 있고, 실제로 돌려본 적은 없다.**
+**코드는 다 있고, 실제 디스코드·Vertex로 돌려본 적은 없다.**
 
-목표: 디스코드 팀 채널에서 **시로가 PM**, 팀원 AI들이 일을 나눠 하는 AI 팀.
-시로는 별도 저장소([smandylee/shiro](https://github.com/smandylee/shiro))이고, 이 저장소([smandylee/aistudio](https://github.com/smandylee/aistudio))는 **팀원들만** 있는 팀 서버다.
+목표: 디스코드 팀 채널에서 **PM 봇**이 팀원 AI들에게 일을 나눠 맡기는 AI 팀.
+**시로는 PM이 아니다** — 주인님 비서로 따로 있고 이 팀과 연결되지 않는다 (2026-09-29 주인님 결정).
+PM·팀원 모두 이 저장소([smandylee/aistudio](https://github.com/smandylee/aistudio)) 한 프로세스에 있다.
 
 ```
-디스코드 #팀채널 ── 시로 (shiro 저장소, team-channel 브랜치)
-                     │  HTTP  POST /tasks { member, task, threadId }
-                     ▼
-                  팀 서버 (이 저장소) ── Vertex AI
-                     └─ 결과를 웹후크로 스레드에 팀원 이름으로 올림 → 시로에게도 돌려줌
+디스코드 #팀채널 ── 주인님 메시지 → PM 봇이 스레드 열기
+   └─ 스레드: PM(봇 계정) ↔ 팀원들(웹후크로 각자 이름). PM은 매번 스레드 기록을 다시 읽는다.
 ```
 
 ### 팀 구성 (정한 것)
-| 역할 | 모델 | 어디 |
-|---|---|---|
-| PM | 시로 (Gemini 3.7 Flash, 기존 그대로) | shiro 저장소 |
-| 개발자 | 시로의 기존 `request_dev_task` → 승인 → PC의 Claude Code | shiro 저장소 |
-| 리서처 | Gemini 3.8 Flash + 구글 검색 | 이 저장소 |
-| 작가 | Claude Opus 5.5 (Vertex) | 이 저장소 |
-| 리뷰어 | Gemini 3.1 Pro | 이 저장소 |
-| 디자이너 | Nano Banana Pro (Gemini 3 Pro Image) | 이 저장소 |
+| 역할 | 모델 |
+|---|---|
+| PM | Claude Opus 5.5 (Vertex) |
+| 리서처 | Gemini 3.8 Flash + 구글 검색 |
+| 작가 | Claude Opus 5.5 (Vertex) |
+| 리뷰어 | Gemini 3.1 Pro |
+| 디자이너 | Nano Banana Pro (Gemini 3 Pro Image) |
+| 개발 | 팀에 없음. 코드 작업은 주인님/시로의 기존 개발 요청으로 |
 
-왜 이렇게 골랐나: PM은 시로가 이미 주인님 기억·도구·페르소나를 갖고 있어서. 리뷰어는 작성자와 **다른 회사 모델**이어야
-실수를 더 잘 잡아서. 리서처는 Vertex의 Claude가 웹 기능이 약하고(web fetch 없음) Gemini는 구글 검색이 붙어서.
-영상(Veo 3.1)은 필요할 때 추가하기로 보류.
+왜: PM은 일을 쪼개고 도구를 오가며 판단하는 게 핵심이라 가장 강한 모델. 리뷰어는 작가·PM과 **다른 회사 모델**이라
+치우침을 잡는다. 리서처는 Vertex의 Claude가 웹 기능이 약해서 Gemini+구글 검색. 영상(Veo 3.1)은 보류.
 
 ### 확인한 것
-- 이 저장소: `tsc` 통과. 로컬에서 서버를 띄워 `/health`, `/members`, 인증(401), 없는 팀원·빈 과제(400),
-  작업 실행→조회까지 확인. 모델 호출은 가짜 프로젝트라 403으로 실패하는 것까지 (실패 처리 경로 확인됨).
-- 시로 쪽 `team/client.ts`: 위 로컬 서버를 상대로 팀원 목록 받기, 작업 맡기기, 틀린 토큰·서버 꺼짐 처리 확인.
+- `tsc` 통과. `PM_BOT_TOKEN`/`TEAM_CHANNEL_ID`/`TEAM_OWNER_ID` 없으면 기동 거부, 다 있으면 디스코드 로그인 단계까지 감 (가짜 토큰이라 TokenInvalid).
+- 팀원 모델 호출은 이전 HTTP 서버 시절 가짜 프로젝트로 403 실패 처리까지만 확인.
 
 ### 못 한 것
-- 실제 디스코드·Vertex로 한 번도 안 돌렸다 (작업하던 Mac에 GCP 인증 없음).
-- 작업하던 Mac에서는 시로의 `better-sqlite3`가 segfault 나서 시로 전체를 로컬 실행 못 했다 (원래 코드도 동일, 이번 작업과 무관).
+- 실제 디스코드·Vertex로 한 번도 안 돌렸다 (Mac·Windows PC 모두 GCP 인증 없음).
+- PM의 스레드 읽기, 도구 호출 루프, 팀원 동시 호출은 실전 확인 필요.
 
 ---
 
 ## 다음 (순서대로)
 
-1. **디스코드 준비**
-   - 서버에 팀 채널(텍스트 채널)을 만든다.
-   - 시로 봇에 그 채널의 `공개 스레드 만들기`, `스레드에서 메시지 보내기` 권한.
-   - 채널 설정 → 연동 → 웹후크 → 새 웹후크 → URL 복사 (팀 서버 `TEAM_WEBHOOK_URL`).
-   - 개발자 모드로 채널 ID 복사 (시로 `TEAM_CHANNEL_ID`).
-2. **Vertex 준비**: Model Garden에서 Claude Opus 5.5 사용 설정. Gemini는 설정 불필요.
-3. **팀 서버를 VM에 올리기** (시로와 같은 Lightsail VM, 홍콩)
-   - VM에서 `git clone https://github.com/smandylee/aistudio.git` → `npm install` → `.env` 작성 (`.env.example` 참고, 토큰은 `openssl rand -hex 32`).
-   - GCP 인증은 시로와 같은 서비스 계정 키를 쓰면 된다 (`GOOGLE_APPLICATION_CREDENTIALS`).
-   - systemd 서비스로 등록: `deploy/ai-team.service` 맨 위 주석의 설치 명령대로 (`mkdir -p data` 먼저).
-     경로·사용자는 `/home/ubuntu/aistudio`, `ubuntu` 가정 — VM이 다르면 파일에서 고친다. VM에서 아직 안 켜봤다.
-4. **시로 쪽 켜기**
-   - shiro `team-channel` 브랜치를 main에 합칠지 결정 → 배포 (`package.json` 안 바뀜, 시로의 "배포해" 사용 가능).
-   - VM `/etc/shiro.env`에 `TEAM_CHANNEL_ID`, `TEAM_SERVER_URL=http://127.0.0.1:18791`, `TEAM_SERVER_TOKEN`.
-5. **첫 실행 확인**
-   - 팀 서버 로그의 모델 ID 404 여부. 모델 ID는 **문서로만 확인했다**:
-     `gemini-3.8-flash`, `claude-opus-5-5`, `gemini-3.1-pro-preview`, `gemini-3-pro-image-preview`.
-     틀리면 `.env`의 `TEAM_*_MODEL`만 고치면 된다.
-   - 팀 채널에 "OO 조사해서 블로그 글 하나 써줘" 같은 걸로 리서처→작가→리뷰어 흐름 확인.
-   - 디자이너 이미지가 스레드에 첨부되는지.
+1. **디스코드 준비** (자세한 건 README "준비")
+   - 팀 채널(텍스트 채널) 만들기 → 웹후크 만들기 → URL (`TEAM_WEBHOOK_URL`).
+   - 개발자 포털에서 PM 봇 만들기 → MESSAGE CONTENT INTENT 켜기 → 토큰 (`PM_BOT_TOKEN`) → 서버에 초대, 팀 채널 권한.
+   - 채널 ID (`TEAM_CHANNEL_ID`), 주인님 사용자 ID (`TEAM_OWNER_ID`).
+2. **Vertex 준비**: Model Garden에서 Claude Opus 5.5 사용 설정 (PM·작가). Gemini는 설정 불필요.
+3. **VM에 올리기** (시로와 같은 Lightsail VM, 홍콩)
+   - `git clone https://github.com/smandylee/aistudio.git` → `npm install` → `.env` 작성 (`.env.example` 참고).
+   - GCP 인증은 시로와 같은 서비스 계정 키 (`GOOGLE_APPLICATION_CREDENTIALS`).
+   - `deploy/ai-team.service` 맨 위 주석대로 등록 (`mkdir -p data` 먼저). 경로·사용자 `/home/ubuntu/aistudio`, `ubuntu` 가정.
+4. **첫 실행 확인**
+   - 로그의 모델 ID 404 여부. 모델 ID는 **문서로만 확인했다**:
+     `claude-opus-5-5`, `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `gemini-3-pro-image-preview`. 틀리면 `.env`만 고친다.
+   - "OO 조사해서 블로그 글 하나 써줘" → 리서처→작가→리뷰어 흐름, 디자이너 이미지 첨부.
+   - 같은 스레드에서 "그 글 더 줄여줘" → PM이 원문을 include로 넘기는지.
+5. **shiro 정리**: shiro의 `team-channel` 브랜치(커밋 `5a582fb`)는 더 안 쓴다. 합치지 말고 지울지 주인님이 정한다.
 
 ### 알려진 한계 / 나중에
-- 팀원 결과 원문은 시로의 대화 기록에 안 남는다 (시로의 요약만 남음). 같은 스레드에서 "그 글 더 줄여줘"라고 하면
-  시로가 원문 없이 다시 맡기게 된다. → 팀 서버가 스레드별 결과를 보관하고 시로가 다시 받아갈 수 있게 하는 방향.
-- 아바타가 켜져 있으면 팀 채널의 긴 보고도 시로가 소리 내어 읽는다 (TTS 비용).
-- 비용: 토큰 수는 `data/usage.jsonl`에 쌓이지만 금액 계산은 없다. 작가(Claude Opus 5.5)가 가장 비싸다 ($4/$20 per 1M).
+- PM은 매 메시지마다 스레드 최근 60개를 통째로 다시 읽는다. 스레드가 길어지면 PM 입력 비용이 커진다 → 프롬프트 캐싱이나 요약 검토.
+- 주인님이 올린 이미지·파일은 이름만 PM에게 보인다 (내용은 못 봄).
+- 비용: 토큰 수는 `data/usage.jsonl`에 쌓이지만 금액 계산은 없다. PM·작가(Claude Opus 5.5, $4/$20 per 1M)가 가장 비싸다.
 - Gemini 3.8 Flash 가격은 2026-12-31까지 프로모션($0.75/$3.75), 이후 $1.5/$7.5.
 
 ---
@@ -82,6 +72,12 @@
 ## 기록
 
 최신이 위.
+
+### 2026-09-29 — PM을 시로에서 떼어내 별도 봇으로
+
+주인님 결정: 시로는 비서로만 두고 PM은 따로. PM 모델은 Claude Opus 5.5.
+HTTP 서버(`server.ts`, `/members`·`/tasks`)를 없애고 `src/pm.ts`(디스코드 봇)가 같은 프로세스에서 팀원을 부른다.
+PM이 스레드 기록을 직접 읽으니 "팀원 원문이 시로 기록에 안 남는" 한계도 없어졌다. 앞선 결과는 `include`로 번호만 넘겨 원문을 붙인다.
 
 ### 2026-09-29 — systemd 서비스 파일
 

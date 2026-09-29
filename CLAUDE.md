@@ -1,7 +1,8 @@
 # CLAUDE.md
 
-AI 팀 서버 — 디스코드 팀 채널에서 PM인 시로([smandylee/shiro](https://github.com/smandylee/shiro))가
-HTTP로 일을 맡기는 팀원들(Vertex AI 모델). 자세한 구조와 API는 `README.md`.
+AI 팀 — 디스코드 팀 채널에서 PM 봇(Claude Opus 5.5)이 팀원들(Vertex AI 모델)에게 일을 나눠 맡긴다.
+시로([smandylee/shiro](https://github.com/smandylee/shiro))는 주인님 비서로 따로 있고 이 팀과 연결되지 않는다.
+자세한 구조는 `README.md`.
 
 ## 세션 규칙
 
@@ -14,23 +15,24 @@ HTTP로 일을 맡기는 팀원들(Vertex AI 모델). 자세한 구조와 API는
 ## 구조
 
 ```
-src/server.ts    HTTP API (/members, /tasks, /tasks/:id). 토큰 없으면 기동 거부
+src/pm.ts        PM 봇 (진입점). 팀 채널 메시지 → 스레드 → 팀원에게 delegate → 보고
 src/members.ts   팀원 정의와 모델 호출. 팀원 추가·변경은 여기만
 src/post.ts      웹후크로 스레드에 팀원 이름으로 올리기
 src/usage.ts     토큰 사용량 → data/usage.jsonl
+deploy/          VM용 systemd 서비스
 ```
 
 ## 명령
 
 ```bash
-npm start        # tsx src/server.ts
+npm start        # tsx src/pm.ts
 npm run check    # tsc --noEmit
 ```
 
 ## 지킬 것
 
-- **fail-closed**: `TEAM_SERVER_TOKEN`이 없으면 켜지지 않는다. 편의를 위해 완화하지 않는다.
-- **팀원은 아무것도 바꾸지 못한다** (조사·글·검토·그림만). 파일·명령·배포 같은 권한은 주지 않는다.
-  코드 작업은 시로의 `request_dev_task`(주인님 승인)로만.
-- 시로와의 계약은 `/members`, `/tasks` 응답 모양이다. 바꾸면 shiro의 `orchestrator/src/team/client.ts`도 같이 고친다.
+- **fail-closed**: `PM_BOT_TOKEN`, `TEAM_CHANNEL_ID`, `TEAM_OWNER_ID`가 없으면 켜지지 않는다. PM은 주인님 메시지에만 답한다
+  (다른 사람 메시지로 Vertex 비용이 나가면 안 된다). 편의를 위해 완화하지 않는다.
+- **팀은 아무것도 바꾸지 못한다** (조사·글·검토·그림만). PM에게도 팀원에게도 파일·명령·배포 같은 권한은 주지 않는다.
+- PM의 비용 상한(`MAX_STEPS`, `MAX_DELEGATIONS`)을 없애지 않는다.
 - 비밀값(`.env`)은 저장소에 없다. `.env.example`만 커밋한다.

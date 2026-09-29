@@ -2,7 +2,7 @@
   "name": "ai-team",
   "version": "1.0.0",
   "scripts": {
-    "start": "tsx src/server.ts",
+    "start": "tsx src/pm.ts",
     "check": "tsc --noEmit"
   },
   "author": "",

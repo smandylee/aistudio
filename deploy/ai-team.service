@@ -1,4 +1,4 @@
-# 팀 서버를 VM에서 24/7 돌리는 systemd 서비스. 시로(shiro-orchestrator)와 같은 VM에 둔다.
+# AI 팀(PM 봇)을 VM에서 24/7 돌리는 systemd 서비스. 시로(shiro-orchestrator)와 같은 VM에 둬도 된다.
 #
 # 설치 (저장소 폴더에서):
 #   mkdir -p data
@@ -12,7 +12,7 @@
 # 설정은 저장소의 .env에서 읽는다 (dotenv가 작업 디렉터리의 .env를 읽음).
 
 [Unit]
-Description=AI team server (Shiro's team members)
+Description=AI team (PM bot and members)
 After=network-online.target
 Wants=network-online.target
 
