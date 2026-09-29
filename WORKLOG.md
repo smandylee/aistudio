@@ -12,7 +12,7 @@
 **코드는 다 있고, 실제로 돌려본 적은 없다.**
 
 목표: 디스코드 팀 채널에서 **시로가 PM**, 팀원 AI들이 일을 나눠 하는 AI 팀.
-시로는 별도 저장소([smandylee/shiro](https://github.com/smandylee/shiro))이고, 이 저장소는 **팀원들만** 있는 팀 서버다.
+시로는 별도 저장소([smandylee/shiro](https://github.com/smandylee/shiro))이고, 이 저장소([smandylee/aistudio](https://github.com/smandylee/aistudio))는 **팀원들만** 있는 팀 서버다.
 
 ```
 디스코드 #팀채널 ── 시로 (shiro 저장소, team-channel 브랜치)
@@ -56,7 +56,7 @@
    - 개발자 모드로 채널 ID 복사 (시로 `TEAM_CHANNEL_ID`).
 2. **Vertex 준비**: Model Garden에서 Claude Opus 5.5 사용 설정. Gemini는 설정 불필요.
 3. **팀 서버를 VM에 올리기** (시로와 같은 Lightsail VM, 홍콩)
-   - VM에서 이 저장소 clone → `npm install` → `.env` 작성 (`.env.example` 참고, 토큰은 `openssl rand -hex 32`).
+   - VM에서 `git clone https://github.com/smandylee/aistudio.git` → `npm install` → `.env` 작성 (`.env.example` 참고, 토큰은 `openssl rand -hex 32`).
    - GCP 인증은 시로와 같은 서비스 계정 키를 쓰면 된다 (`GOOGLE_APPLICATION_CREDENTIALS`).
    - systemd 서비스로 등록 (시로의 `shiro-orchestrator.service`를 본떠서). **아직 서비스 파일 없음 — 만들어야 함.**
 4. **시로 쪽 켜기**
