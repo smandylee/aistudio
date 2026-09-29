@@ -31,6 +31,7 @@ npm start
 - Vertex Model Garden에서 Claude Opus 5.5를 사용 설정해야 작가가 동작한다.
 - `TEAM_SERVER_TOKEN`이 없으면 켜지지 않는다. 시로의 `/etc/shiro.env`에도 같은 값을 넣는다.
 - 모델별 토큰 사용량은 `data/usage.jsonl`에 쌓인다.
+- VM에서 상시 실행: `deploy/ai-team.service` (설치 방법은 파일 맨 위 주석).
 
 ## API
 
