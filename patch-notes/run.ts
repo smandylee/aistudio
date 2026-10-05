@@ -5,18 +5,18 @@ import { GoogleGenAI } from "@google/genai";
 
 // Patch notes: for each watched repo, find the commits pushed since the last
 // run, have Gemini turn them into short Korean patch notes, and post them to
-// the Discord #패치노트 channel through a webhook.
+// each repo's own Discord channel through that channel's webhook.
 //
 // Runs on a schedule in GitHub Actions (.github/workflows/patch-notes.yml), so
 // nothing has to be added to the watched repos and no PC or VM has to be on.
 // The first time a repo is seen it is only bookmarked, never summarized whole.
 
-type Watched = { repo: string; name: string; branch: string };
+// webhook: name of the env var (an Actions secret) holding that channel's webhook URL.
+// channel: the channel that webhook must post to, so a mixed-up secret can't post in the wrong place.
+type Watched = { repo: string; name: string; branch: string; webhook: string; channel: string };
 type State = Record<string, string>; // repo -> last commit SHA posted
 
 const DRY_RUN = process.env.DRY_RUN === "1";
-const WEBHOOK = process.env.PATCH_NOTES_WEBHOOK;
-if (!WEBHOOK && !DRY_RUN) throw new Error("PATCH_NOTES_WEBHOOK is not set");
 const project = process.env.GOOGLE_CLOUD_PROJECT;
 if (!project) throw new Error("GOOGLE_CLOUD_PROJECT is not set");
 
@@ -100,10 +100,10 @@ async function post(w: Watched, cmp: Compare, base: string, head: string, notes:
   const description = notes.length > MAX_DESCRIPTION_CHARS ? notes.slice(0, MAX_DESCRIPTION_CHARS) + "\n…" : notes;
   const footer = `${w.repo} · 커밋 ${cmp.total_commits}개 · ${base.slice(0, 7)} → ${head.slice(0, 7)}`;
   if (DRY_RUN) {
-    console.log(`----- ${w.name} 패치노트 -----\n${description}\n(${footer})`);
+    console.log(`----- ${w.name} 패치노트 -> 채널 ${w.channel} -----\n${description}\n(${footer})`);
     return;
   }
-  const res = await fetch(WEBHOOK!, {
+  const res = await fetch(await webhookFor(w), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -122,6 +122,22 @@ async function post(w: Watched, cmp: Compare, base: string, head: string, notes:
     }),
   });
   if (!res.ok) throw new Error(`webhook: ${res.status} ${(await res.text()).slice(0, 200)}`);
+}
+
+const webhookChannels = new Map<string, string>();
+
+async function webhookFor(w: Watched): Promise<string> {
+  const url = process.env[w.webhook];
+  if (!url) throw new Error(`${w.webhook} is not set`);
+  if (!webhookChannels.has(url)) {
+    // A webhook URL answers GET with the channel it posts to.
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${w.webhook}: webhook lookup ${res.status}`);
+    webhookChannels.set(url, ((await res.json()) as { channel_id: string }).channel_id);
+  }
+  const channel = webhookChannels.get(url);
+  if (channel !== w.channel) throw new Error(`${w.webhook} posts to channel ${channel}, not ${w.channel}`);
+  return url;
 }
 
 function loadState(): State {

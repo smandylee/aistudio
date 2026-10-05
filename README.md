@@ -12,7 +12,7 @@
 ## 패치노트
 
 `patch-notes/repos.json`에 적힌 저장소(지금 시로, Safehouse)에 새 커밋이 올라오면, Gemini가 커밋과 바뀐 코드를 읽고
-한국어 패치노트로 정리해서 `#패치노트` 채널에 올린다. 감시 대상 저장소에는 아무것도 추가하지 않는다.
+한국어 패치노트로 정리해서 저장소마다 정해진 `#패치노트` 채널에 올린다. 감시 대상 저장소에는 아무것도 추가하지 않는다.
 
 - 처음 보는 저장소는 그 시점을 북마크만 하고, 그 뒤 커밋부터 올린다.
 - 푸시 후 보통 10~20분 안에 올라온다 (GitHub 예약 실행이 몇 분씩 늦기도 함). 바로 보고 싶으면 Actions에서 수동 실행.
@@ -20,15 +20,17 @@
 - 비용: Gemini 3.8 Flash로 푸시 한 번에 10~20원 정도.
 
 **켜기** — GitHub 저장소 Settings → Secrets and variables → Actions → New repository secret
-- `PATCH_NOTES_WEBHOOK`: `#패치노트` 채널의 웹후크 URL
+- `PATCH_NOTES_WEBHOOK_SHIRO`, `PATCH_NOTES_WEBHOOK_SAFEHOUSE`: 각 패치노트 채널의 웹후크 URL.
+  웹후크가 `repos.json`의 `channel`과 다른 채널을 가리키면 올리지 않는다 (비밀값을 바꿔 넣는 실수 방지).
 - `GCP_SA_KEY`: 서비스 계정 키 JSON 파일 내용 전체 (Vertex AI 사용자 역할)
 
-둘 중 하나라도 없으면 워크플로는 아무것도 안 하고 성공으로 끝난다.
+`GCP_SA_KEY`가 없으면 워크플로는 아무것도 안 하고 성공으로 끝난다. 웹후크가 없는 저장소만 실패로 남는다.
 
 - `PATCH_NOTES_GH_TOKEN`: 비공개 저장소(safehouse_unity)를 읽는 토큰. GitHub → Settings → Developer settings →
   Fine-grained tokens → 저장소는 감시 대상만, 권한은 **Contents: Read-only** 하나 (Metadata는 자동). 만료일이 지나면 새로 넣는다.
 
-**저장소 추가** — `repos.json`에 `{ "repo": "owner/name", "name": "표시 이름", "branch": "main" }` 한 줄.
+**저장소 추가** — `repos.json`에 한 줄 (`repo`, `name`, `branch`, `webhook`=비밀값 이름, `channel`=채널 ID),
+워크플로의 `env`에 그 웹후크 비밀값 한 줄, GitHub 비밀값에 웹후크 URL.
 비공개 저장소면 위 토큰의 저장소 목록에도 추가한다.
 
 **로컬 시험** — `.env`에 GCP 값이 있으면 `DRY_RUN=1 npm run patch-notes` (디스코드에 안 올리고 출력만).

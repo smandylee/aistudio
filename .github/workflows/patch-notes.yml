@@ -1,5 +1,6 @@
 # 감시 중인 저장소(patch-notes/repos.json)에 새 커밋이 있으면 패치노트를 디스코드에 올린다.
-# 필요한 저장소 비밀값: PATCH_NOTES_WEBHOOK (#패치노트 채널 웹후크), GCP_SA_KEY (서비스 계정 키 JSON 전체),
+# 필요한 저장소 비밀값: PATCH_NOTES_WEBHOOK_SHIRO, PATCH_NOTES_WEBHOOK_SAFEHOUSE (저장소별 패치노트 채널 웹후크),
+# GCP_SA_KEY (서비스 계정 키 JSON 전체),
 # PATCH_NOTES_GH_TOKEN (비공개 저장소를 읽는 읽기 전용 토큰. 없으면 공개 저장소만 읽힌다)
 name: patch-notes
 
@@ -21,10 +22,10 @@ jobs:
     timeout-minutes: 10
     env:
       # 비밀값을 넣기 전에는 아무것도 안 하고 성공으로 끝난다 (10분마다 실패 메일이 오지 않게).
-      READY: ${{ secrets.PATCH_NOTES_WEBHOOK != '' && secrets.GCP_SA_KEY != '' }}
+      READY: ${{ secrets.GCP_SA_KEY != '' }}
     steps:
       - if: env.READY != 'true'
-        run: echo "::notice::PATCH_NOTES_WEBHOOK, GCP_SA_KEY 비밀값이 없어서 건너뜀"
+        run: echo "::notice::GCP_SA_KEY 비밀값이 없어서 건너뜀"
 
       - if: env.READY == 'true'
         uses: actions/checkout@v4
@@ -54,7 +55,9 @@ jobs:
       - if: env.READY == 'true'
         run: npm run patch-notes
         env:
-          PATCH_NOTES_WEBHOOK: ${{ secrets.PATCH_NOTES_WEBHOOK }}
+          # repos.json의 "webhook" 이름마다 한 줄. 저장소를 추가하면 여기도 추가한다.
+          PATCH_NOTES_WEBHOOK_SHIRO: ${{ secrets.PATCH_NOTES_WEBHOOK_SHIRO }}
+          PATCH_NOTES_WEBHOOK_SAFEHOUSE: ${{ secrets.PATCH_NOTES_WEBHOOK_SAFEHOUSE }}
           GOOGLE_CLOUD_PROJECT: aistudio-510104
           PATCH_NOTES_GH_TOKEN: ${{ secrets.PATCH_NOTES_GH_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}

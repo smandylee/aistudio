@@ -40,7 +40,7 @@
 
 1. **패치노트 켜기**
    - 디스코드에 `#패치노트` 채널 → 웹후크 URL.
-   - GitHub aistudio → Settings → Secrets → Actions에 `PATCH_NOTES_WEBHOOK`, `GCP_SA_KEY`(키 JSON 내용 전체),
+   - GitHub aistudio → Settings → Secrets → Actions에 `PATCH_NOTES_WEBHOOK_SHIRO`(채널 1556779649025974394), `PATCH_NOTES_WEBHOOK_SAFEHOUSE`(채널 1556779700154802256), `GCP_SA_KEY`(키 JSON 내용 전체),
      `PATCH_NOTES_GH_TOKEN`(`safehouse_unity`가 비공개라 필요. fine-grained, Contents 읽기 전용).
    - Actions → patch-notes → Run workflow로 첫 실행 (북마크만 됨) → 아무 저장소에 커밋 푸시 → 10~20분 안에 올라오는지.
 2. **PM 봇 토큰 Reset** — 채팅에 노출됐다. 콘텐츠 팀을 켤 때 새로 받아 `.env`에.

@@ -1,4 +1,4 @@
 [
-  { "repo": "smandylee/shiro", "name": "시로", "branch": "main" },
-  { "repo": "smandylee/safehouse_unity", "name": "Safehouse", "branch": "main" }
+  { "repo": "smandylee/shiro", "name": "시로", "branch": "main", "webhook": "PATCH_NOTES_WEBHOOK_SHIRO", "channel": "1556779649025974394" },
+  { "repo": "smandylee/safehouse_unity", "name": "Safehouse", "branch": "main", "webhook": "PATCH_NOTES_WEBHOOK_SAFEHOUSE", "channel": "1556779700154802256" }
 ]
