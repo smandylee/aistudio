@@ -7,71 +7,60 @@
 
 ---
 
-## 상태 (2026-09-29 기준)
+## 상태 (2026-10-06 기준)
 
-**코드는 다 있고, 실제 디스코드·Vertex로 돌려본 적은 없다.**
+이 저장소는 **주인님 디스코드 서버에 넣는 봇·AI 모음**이다. 봇마다 폴더 하나 (`README.md`의 봇 표).
 
-목표: 디스코드 팀 채널에서 **PM 봇**이 팀원 AI들에게 일을 나눠 맡기는 AI 팀.
-**시로는 PM이 아니다** — 주인님 비서로 따로 있고 이 팀과 연결되지 않는다 (2026-09-29 주인님 결정).
-PM·팀원 모두 이 저장소([smandylee/aistudio](https://github.com/smandylee/aistudio)) 한 프로세스에 있다.
+**방향 (2026-10-06 주인님과 이야기한 결과)**
+- 원래 목표는 "개발팀"이었다. 정리 결과 **개발은 봇이 아니라 Claude Code를 직접 쓴다** —
+  봇 하나를 거쳐도 결국 Claude Code이고, 밖에서는 Remote Control(휴대폰 앱)·Claude Code 웹으로 충분하다.
+- 시로는 비서로만. 이 저장소와 연결되지 않는다.
+- 공유 기억은 각 저장소의 `CLAUDE.md` + `WORKLOG.md`로 충분하다 (Pinecone 등은 필요해지면).
 
-```
-디스코드 #팀채널 ── 주인님 메시지 → PM 봇이 스레드 열기
-   └─ 스레드: PM(봇 계정) ↔ 팀원들(웹후크로 각자 이름). PM은 매번 스레드 기록을 다시 읽는다.
-```
+### 패치노트 봇 (`patch-notes/`) — 코드 끝, 비밀값 넣으면 켜짐
+- GitHub Actions가 10분마다 `repos.json`의 저장소(지금 시로·aistudio)를 보고, 새 커밋을 Gemini 3.8 Flash로 요약해 웹후크로 올린다.
+- 로컬에서 시로의 최근 커밋 3개로 DRY_RUN 확인: 요약 품질 괜찮음, 입력 8.6k/출력 1k 토큰 (10~20원).
+- **실제 디스코드 게시와 Actions 실행은 아직 안 해 봤다.**
 
-### 팀 구성 (정한 것)
-| 역할 | 모델 |
-|---|---|
-| PM | Claude Opus 5.5 (Vertex) |
-| 리서처 | Gemini 3.8 Flash + 구글 검색 |
-| 작가 | Claude Opus 5.5 (Vertex) |
-| 리뷰어 | Gemini 3.1 Pro |
-| 디자이너 | Nano Banana Pro (Gemini 3 Pro Image) |
-| 개발 | 팀에 없음. 코드 작업은 주인님/시로의 기존 개발 요청으로 |
+### 콘텐츠 팀 (`team/`) — 보류
+- 나중에 인스타 콘텐츠용. 코드는 있다 (PM Claude Opus 5.5 + 리서처/작가/리뷰어/디자이너).
+- Gemini 두 모델은 실제 호출 확인됨. **Claude Opus는 쿼터 0이라 429** — 켤 때 쿼터 신청 (global, anthropic-claude-opus, 분당 요청 20 / 입력 40만).
+- 디스코드: PM 봇(`PM`, id 1554355441566220410) 만들어 서버에 초대, Intent 켬. 팀 채널·웹후크는 아직.
 
-왜: PM은 일을 쪼개고 도구를 오가며 판단하는 게 핵심이라 가장 강한 모델. 리뷰어는 작가·PM과 **다른 회사 모델**이라
-치우침을 잡는다. 리서처는 Vertex의 Claude가 웹 기능이 약해서 Gemini+구글 검색. 영상(Veo 3.1)은 보류.
-
-### 확인한 것
-- `tsc` 통과. `PM_BOT_TOKEN`/`TEAM_CHANNEL_ID`/`TEAM_OWNER_ID` 없으면 기동 거부, 다 있으면 디스코드 로그인 단계까지 감 (가짜 토큰이라 TokenInvalid).
-- 팀원 모델 호출은 이전 HTTP 서버 시절 가짜 프로젝트로 403 실패 처리까지만 확인.
-
-### 못 한 것
-- 실제 디스코드·Vertex로 한 번도 안 돌렸다 (Mac·Windows PC 모두 GCP 인증 없음).
-- PM의 스레드 읽기, 도구 호출 루프, 팀원 동시 호출은 실전 확인 필요.
+### GCP·디스코드 (이 Windows PC에 설정됨)
+- 프로젝트 `aistudio-510104` (시로와 다른 새 프로젝트). Vertex AI API 켬, Claude Opus 5.5 사용 설정.
+- 서비스 계정 `ai-team@aistudio-510104.iam.gserviceaccount.com` (Vertex AI 사용자). 키는 `C:\Users\User\.gcp\ai-team.json` — 저장소 밖.
+- `.env` 채운 값: PM_BOT_TOKEN, TEAM_OWNER_ID, GOOGLE_CLOUD_PROJECT, GOOGLE_APPLICATION_CREDENTIALS.
+- gcloud 설치됨 (`%LOCALAPPDATA%\Google\Cloud SDK`), 로그인은 안 함 (키 파일 사용).
+- 디스코드 서버 id 1554315530691936337, 주인님 id 397941414614532096. 텍스트 채널은 `#일반`뿐.
 
 ---
 
 ## 다음 (순서대로)
 
-1. **디스코드 준비** (자세한 건 README "준비")
-   - 팀 채널(텍스트 채널) 만들기 → 웹후크 만들기 → URL (`TEAM_WEBHOOK_URL`).
-   - 개발자 포털에서 PM 봇 만들기 → MESSAGE CONTENT INTENT 켜기 → 토큰 (`PM_BOT_TOKEN`) → 서버에 초대, 팀 채널 권한.
-   - 채널 ID (`TEAM_CHANNEL_ID`), 주인님 사용자 ID (`TEAM_OWNER_ID`).
-2. **Vertex 준비**: Model Garden에서 Claude Opus 5.5 사용 설정 (PM·작가). Gemini는 설정 불필요.
-3. **VM에 올리기** (시로와 같은 Lightsail VM, 홍콩)
-   - `git clone https://github.com/smandylee/aistudio.git` → `npm install` → `.env` 작성 (`.env.example` 참고).
-   - GCP 인증은 시로와 같은 서비스 계정 키 (`GOOGLE_APPLICATION_CREDENTIALS`).
-   - `deploy/ai-team.service` 맨 위 주석대로 등록 (`mkdir -p data` 먼저). 경로·사용자 `/home/ubuntu/aistudio`, `ubuntu` 가정.
-4. **첫 실행 확인**
-   - 로그의 모델 ID 404 여부. 모델 ID는 **문서로만 확인했다**:
-     `claude-opus-5-5`, `gemini-3.8-flash`, `gemini-3.1-pro-preview`, `gemini-3-pro-image-preview`. 틀리면 `.env`만 고친다.
-   - "OO 조사해서 블로그 글 하나 써줘" → 리서처→작가→리뷰어 흐름, 디자이너 이미지 첨부.
-   - 같은 스레드에서 "그 글 더 줄여줘" → PM이 원문을 include로 넘기는지.
-5. **shiro 정리**: shiro의 `team-channel` 브랜치(커밋 `5a582fb`)는 더 안 쓴다. 합치지 말고 지울지 주인님이 정한다.
+1. **패치노트 켜기**
+   - 디스코드에 `#패치노트` 채널 → 웹후크 URL.
+   - GitHub aistudio → Settings → Secrets → Actions에 `PATCH_NOTES_WEBHOOK`, `GCP_SA_KEY`(키 JSON 내용 전체).
+   - Actions → patch-notes → Run workflow로 첫 실행 (북마크만 됨) → 아무 저장소에 커밋 푸시 → 10~20분 안에 올라오는지.
+2. **PM 봇 토큰 Reset** — 채팅에 노출됐다. 콘텐츠 팀을 켤 때 새로 받아 `.env`에.
+3. 다음 봇 후보 (주인님과 이야기한 순서): 스튜디오 상태 알림(서비스가 조용히 멈추면 알림) → 커밋 검토(다른 회사 모델) →
+   취업 공고 봇(시로 `tools/jobspy/crawl.py` 재활용, 웹후크로 직접. 공개 서버면 LinkedIn·Indeed 약관 위험) → 인스타 콘텐츠 팀.
 
 ### 알려진 한계 / 나중에
-- PM은 매 메시지마다 스레드 최근 60개를 통째로 다시 읽는다. 스레드가 길어지면 PM 입력 비용이 커진다 → 프롬프트 캐싱이나 요약 검토.
-- 주인님이 올린 이미지·파일은 이름만 PM에게 보인다 (내용은 못 봄).
-- 비용: 토큰 수는 `data/usage.jsonl`에 쌓이지만 금액 계산은 없다. PM·작가(Claude Opus 5.5, $4/$20 per 1M)가 가장 비싸다.
-- Gemini 3.8 Flash 가격은 2026-12-31까지 프로모션($0.75/$3.75), 이후 $1.5/$7.5.
+- 패치노트: 비공개 저장소는 읽기 토큰이 필요하다 (아직 없음). 공개 저장소에 60일 커밋이 없으면 GitHub이 예약 실행을 끈다.
+- 콘텐츠 팀: 스레드가 길면 PM 입력 비용이 커진다 → 프롬프트 캐싱. 주인님 첨부 이미지는 이름만 보인다.
 
 ---
 
 ## 기록
 
 최신이 위.
+
+### 2026-10-06 — 방향 정리, 패치노트 봇
+
+개발팀을 봇으로 만들려던 것을 접었다: Claude Code를 직접 쓰는 게 낫다 (밖에서는 Remote Control·웹). 이 저장소는 서버용 봇 모음으로.
+콘텐츠 팀 코드를 `src/` → `team/`으로 옮기고(서비스 파일이 지운 `src/server.ts`를 가리키던 것도 고침), 패치노트 봇을 새로 만들었다.
+GCP 새 프로젝트·서비스 계정을 만들고 Gemini 호출까지 확인했다. 키 파일이 저장소에 staged 돼 있던 걸 빼고 저장소 밖으로 옮겼다 (커밋된 적 없음).
 
 ### 2026-09-29 — PM을 시로에서 떼어내 별도 봇으로
 

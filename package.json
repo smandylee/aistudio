@@ -2,7 +2,8 @@
   "name": "ai-team",
   "version": "1.0.0",
   "scripts": {
-    "start": "tsx src/pm.ts",
+    "start": "tsx team/pm.ts",
+    "patch-notes": "tsx patch-notes/run.ts",
     "check": "tsc --noEmit"
   },
   "author": "",

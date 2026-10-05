@@ -21,7 +21,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/aistudio
 # npm start와 같지만 npm을 거치지 않는다 (npm은 읽기 전용인 ~/.npm에 로그를 쓰려 한다).
-ExecStart=/home/ubuntu/aistudio/node_modules/.bin/tsx src/server.ts
+ExecStart=/home/ubuntu/aistudio/node_modules/.bin/tsx team/pm.ts
 Restart=on-failure
 RestartSec=5
 
