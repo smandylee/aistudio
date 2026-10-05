@@ -31,11 +31,19 @@ const SKIP_PATCH = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|.*\.min
 
 const ai = new GoogleGenAI({ vertexai: true, project, location: process.env.GOOGLE_CLOUD_LOCATION ?? "global" });
 
+class GitHubError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+  }
+}
+
 async function github<T>(endpoint: string): Promise<T> {
   const headers: Record<string, string> = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
-  if (process.env.GITHUB_TOKEN) headers.authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  // The read-only token for private repos when there is one; otherwise Actions' own token (public repos only).
+  const token = process.env.PATCH_NOTES_GH_TOKEN || process.env.GITHUB_TOKEN;
+  if (token) headers.authorization = `Bearer ${token}`;
   const res = await fetch(`https://api.github.com${endpoint}`, { headers });
-  if (!res.ok) throw new Error(`GitHub ${endpoint}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) throw new GitHubError(res.status, `GitHub ${endpoint}: ${res.status} ${(await res.text()).slice(0, 200)}`);
   return (await res.json()) as T;
 }
 
@@ -130,7 +138,17 @@ function saveState(state: State): void {
 }
 
 async function check(w: Watched, state: State): Promise<void> {
-  const head = (await github<{ sha: string }>(`/repos/${w.repo}/commits/${w.branch}`)).sha;
+  let head: string;
+  try {
+    head = (await github<{ sha: string }>(`/repos/${w.repo}/commits/${w.branch}`)).sha;
+  } catch (err) {
+    // 409: the repo exists but nothing has been pushed yet. Not a failure, just nothing to read.
+    if (err instanceof GitHubError && err.status === 409) {
+      console.log(`[patch-notes] ${w.repo}: empty, nothing pushed yet`);
+      return;
+    }
+    throw err;
+  }
   const base = state[w.repo];
   if (!base) {
     console.log(`[patch-notes] ${w.repo}: first look, bookmarked ${head.slice(0, 7)}`);
