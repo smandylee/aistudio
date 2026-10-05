@@ -18,7 +18,7 @@
 - 공유 기억은 각 저장소의 `CLAUDE.md` + `WORKLOG.md`로 충분하다 (Pinecone 등은 필요해지면).
 
 ### 패치노트 봇 (`patch-notes/`) — 코드 끝, 비밀값 넣으면 켜짐
-- GitHub Actions가 10분마다 `repos.json`의 저장소(지금 시로·aistudio)를 보고, 새 커밋을 Gemini 3.8 Flash로 요약해 웹후크로 올린다.
+- GitHub Actions가 10분마다 `repos.json`의 저장소(시로, Safehouse=`safehouse_unity`)를 보고, 새 커밋을 Gemini 3.8 Flash로 요약해 웹후크로 올린다.
 - 로컬에서 시로의 최근 커밋 3개로 DRY_RUN 확인: 요약 품질 괜찮음, 입력 8.6k/출력 1k 토큰 (10~20원).
 - **실제 디스코드 게시와 Actions 실행은 아직 안 해 봤다.**
 
@@ -40,14 +40,15 @@
 
 1. **패치노트 켜기**
    - 디스코드에 `#패치노트` 채널 → 웹후크 URL.
-   - GitHub aistudio → Settings → Secrets → Actions에 `PATCH_NOTES_WEBHOOK`, `GCP_SA_KEY`(키 JSON 내용 전체).
+   - GitHub aistudio → Settings → Secrets → Actions에 `PATCH_NOTES_WEBHOOK`, `GCP_SA_KEY`(키 JSON 내용 전체),
+     `PATCH_NOTES_GH_TOKEN`(`safehouse_unity`가 비공개라 필요. fine-grained, Contents 읽기 전용).
    - Actions → patch-notes → Run workflow로 첫 실행 (북마크만 됨) → 아무 저장소에 커밋 푸시 → 10~20분 안에 올라오는지.
 2. **PM 봇 토큰 Reset** — 채팅에 노출됐다. 콘텐츠 팀을 켤 때 새로 받아 `.env`에.
 3. 다음 봇 후보 (주인님과 이야기한 순서): 스튜디오 상태 알림(서비스가 조용히 멈추면 알림) → 커밋 검토(다른 회사 모델) →
    취업 공고 봇(시로 `tools/jobspy/crawl.py` 재활용, 웹후크로 직접. 공개 서버면 LinkedIn·Indeed 약관 위험) → 인스타 콘텐츠 팀.
 
 ### 알려진 한계 / 나중에
-- 패치노트: 비공개 저장소는 읽기 토큰이 필요하다 (아직 없음). 공개 저장소에 60일 커밋이 없으면 GitHub이 예약 실행을 끈다.
+- 패치노트: 비공개 저장소는 `PATCH_NOTES_GH_TOKEN`이 있어야 읽힌다 (토큰 만료되면 404로 실패 — 새로 넣기). 공개 저장소에 60일 커밋이 없으면 GitHub이 예약 실행을 끈다.
 - 콘텐츠 팀: 스레드가 길면 PM 입력 비용이 커진다 → 프롬프트 캐싱. 주인님 첨부 이미지는 이름만 보인다.
 
 ---
@@ -55,6 +56,10 @@
 ## 기록
 
 최신이 위.
+
+### 2026-10-06 — 패치노트 대상: 시로 + Safehouse
+
+aistudio는 빼고 `safehouse_unity`(비공개, PC `Desktop\Safehouse`)를 넣었다. 비공개 저장소용 읽기 토큰 비밀값을 받게 했고, 유니티 바이너리·에셋 파일 diff는 요약에서 뺀다.
 
 ### 2026-10-06 — 방향 정리, 패치노트 봇
 

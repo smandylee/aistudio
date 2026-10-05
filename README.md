@@ -11,7 +11,7 @@
 
 ## 패치노트
 
-`patch-notes/repos.json`에 적힌 저장소에 새 커밋이 올라오면, Gemini가 커밋과 바뀐 코드를 읽고
+`patch-notes/repos.json`에 적힌 저장소(지금 시로, Safehouse)에 새 커밋이 올라오면, Gemini가 커밋과 바뀐 코드를 읽고
 한국어 패치노트로 정리해서 `#패치노트` 채널에 올린다. 감시 대상 저장소에는 아무것도 추가하지 않는다.
 
 - 처음 보는 저장소는 그 시점을 북마크만 하고, 그 뒤 커밋부터 올린다.
@@ -25,8 +25,11 @@
 
 둘 중 하나라도 없으면 워크플로는 아무것도 안 하고 성공으로 끝난다.
 
+- `PATCH_NOTES_GH_TOKEN`: 비공개 저장소(safehouse_unity)를 읽는 토큰. GitHub → Settings → Developer settings →
+  Fine-grained tokens → 저장소는 감시 대상만, 권한은 **Contents: Read-only** 하나 (Metadata는 자동). 만료일이 지나면 새로 넣는다.
+
 **저장소 추가** — `repos.json`에 `{ "repo": "owner/name", "name": "표시 이름", "branch": "main" }` 한 줄.
-비공개 저장소는 읽기 권한이 있는 토큰이 필요하다 (아직 안 만듦).
+비공개 저장소면 위 토큰의 저장소 목록에도 추가한다.
 
 **로컬 시험** — `.env`에 GCP 값이 있으면 `DRY_RUN=1 npm run patch-notes` (디스코드에 안 올리고 출력만).
 

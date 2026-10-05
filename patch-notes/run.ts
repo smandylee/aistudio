@@ -27,7 +27,7 @@ const MAX_PATCH_CHARS_PER_FILE = 3_000;
 const MAX_INPUT_CHARS = 40_000;
 const MAX_DESCRIPTION_CHARS = 4_000; // Discord caps an embed description at 4096
 // Diffs of generated or binary files say nothing about what changed and eat the budget.
-const SKIP_PATCH = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|.*\.min\.(js|css)|.*\.(png|jpg|jpeg|gif|webp|ico|svg|unity|asset|prefab|meta))$/i;
+const SKIP_PATCH = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|.*\.min\.(js|css)|.*\.(png|jpg|jpeg|gif|webp|ico|svg|psd|wav|mp3|ogg|fbx|unity|asset|prefab|meta|mat|anim|controller|overrideController|physicMaterial|lighting|spriteatlas|mask))$/i;
 
 const ai = new GoogleGenAI({ vertexai: true, project, location: process.env.GOOGLE_CLOUD_LOCATION ?? "global" });
 
